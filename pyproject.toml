@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "compress-mol"
+version = "0.1.0"
+description = "Compression Of Molecular Physical fields into Reduced Spatial Sites"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.0.0",
+    "numpy>=1.26.0",
+    "pandas>=2.0.0",
+    "scikit-learn>=1.3.0",
+    "rdkit>=2024.03.0",
+    "acpype>=2023.10.27",
+    "openbabel-wheel>=3.1.1",
+]
+
+[tool.setuptools]
+py-modules = ["COMPRESS"]  
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[project.scripts]
+compress = "COMPRESS:main"

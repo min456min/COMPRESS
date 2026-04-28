@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: compress-mol
+Version: 0.1.0
+Summary: Compression Of Molecular Physical fields into Reduced Spatial Sites
+Requires-Python: >=3.10
+Requires-Dist: torch>=2.0.0
+Requires-Dist: numpy>=1.26.0
+Requires-Dist: pandas>=2.0.0
+Requires-Dist: scikit-learn>=1.3.0
+Requires-Dist: rdkit>=2024.03.0
+Requires-Dist: acpype>=2023.10.27
+Requires-Dist: openbabel-wheel>=3.1.1
