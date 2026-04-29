@@ -24,7 +24,7 @@ COMPRESS/
 └── script/
     ├── __init__.py
     ├── extract_params.py    # SMI/PDB → ACPYPE → params CSV
-    ├── init.py              # AA and CG grid initialization
+    ├── init.py              # AA and COMPRESS(CG) grid initialization
     ├── grid.py              # Grid class (field computation)
     ├── loss.py              # Loss functions
     ├── update_features.py   # L-BFGS optimization loop
@@ -86,7 +86,7 @@ compress -t <type> -n <name> -s <n_sites> [options]
 |---|---|
 | `-t`, `--type` | Input file type: `smi` or `pdb` |
 | `-n`, `--name` | Molecule name (must match filename, e.g. `benzene` → `benzene.smi`) |
-| `-s`, `--site` | Number of CG sites |
+| `-s`, `--site` | Number of COMPRESS sites |
 
 ### Optional Arguments
 
@@ -138,8 +138,8 @@ In all three cases, the pipeline runs automatically:
 1. Generate `test.pdb` from SMILES via RDKit (Cases 1 & 2 only)
 2. Run ACPYPE → `test.acpype/`
 3. Extract atomic parameters → `test_params.csv`
-4. Initialize AA and CG grids
-5. Optimize CG sites via L-BFGS
+4. Initialize AA and COMPRESS (CG) grids
+5. Optimize COMPRESS sites via L-BFGS
 6. Save results → `test_s12_COMPRESS.pt`
 
 If `test_params.csv` already exists (e.g. rerunning with a different site count), steps 1–3 are skipped automatically:
@@ -190,10 +190,10 @@ data["AA_chg"]   # All-atom charges        (N_aa,)
 data["AA_sig"]   # All-atom sigma          (N_aa,)
 data["AA_eps"]   # All-atom epsilon        (N_aa,)
 
-data["CG_pos"]   # CG site positions       (N_cg, 3)
-data["CG_chg"]   # CG site charges         (N_cg,)
-data["CG_sig"]   # CG site sigma           (N_cg,)
-data["CG_eps"]   # CG site epsilon         (N_cg,)
+data["pos"]      # COMPRESS site positions       (N_cg, 3)
+data["chg"]      # COMPRESS site charges         (N_cg,)
+data["sig"]      # COMPRESS site sigma           (N_cg,)
+data["eps"]      # COMPRESS site epsilon         (N_cg,)
 
 data["loss"]     # Final loss dict
 ```
