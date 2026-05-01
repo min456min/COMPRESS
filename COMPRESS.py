@@ -5,7 +5,7 @@ import torch
 from script.extract_params import generate_pdb_from_smiles, run_acpype, extract_params
 from script.init import get_Grids
 from script.update_features import update_CG
-from script.write_file import write_result
+from script.write_file import write_result, write_result_all
 
 
 def main():
@@ -14,7 +14,8 @@ def main():
     # Basic arguments
     parser.add_argument("-t", "--type",  type=str, default="pdb")
     parser.add_argument("-n", "--name",  type=str, required=True)
-    parser.add_argument("-s", "--site",  type=int, default=1)
+    # parser.add_argument("-s", "--site",  type=int, default=1)
+    parser.add_argument("-s", "--site", type=str, default="1", help="Number of CG sites, or 'all' for K=1 to M")
 
     # SMILES
     parser.add_argument("-sm", "--smiles", type=str, default=None, help="SMILES string (e.g. 'c1ccccc1')")
@@ -37,6 +38,12 @@ def main():
     parser.add_argument("--tau_charge",       type=float, nargs=2, default=[0.2, 1.0])
     parser.add_argument("--tau_epsilon",      type=float, nargs=2, default=[0.2, 2.0])
 
+    # Path arguments (optional, default to cwd)
+    parser.add_argument("--out_dir",    type=Path, default=None, help="Output directory (default: cwd)")
+    parser.add_argument("--param_path", type=Path, default=None, help="Path to existing params CSV")
+    parser.add_argument("--pdb_path",   type=Path, default=None, help="Path to existing PDB file")
+    parser.add_argument("--smi_path",   type=Path, default=None, help="Path to existing SMI file")
+
     args = parser.parse_args()
 
     # Reconstruct config dict
@@ -58,14 +65,26 @@ def main():
             "epsilon": args.tau_epsilon,
         }
     }
-
+    
     work_dir   = Path.cwd()
     name       = args.name
-    input_path = work_dir / f"{name}.{args.type}"
-    pdb_path   = work_dir / f"{name}.pdb"
+    out_dir    = args.out_dir   if args.out_dir   else work_dir
+    param_path = args.param_path if args.param_path else work_dir / f"{name}_params.csv"
+    pdb_path   = args.pdb_path  if args.pdb_path  else work_dir / f"{name}.pdb"
     acpype_dir = work_dir / f"{name}.acpype"
-    param_path = work_dir / f"{name}_params.csv"
-    out_path   = work_dir / f"{name}_s{args.site}_COMPRESS.pt"
+
+    # Input path: smi_path > explicit path > default
+    if args.smi_path:
+        input_path = args.smi_path
+    else:
+        input_path = work_dir / f"{name}.{args.type}"
+
+    # Output path
+    if args.site == "all":
+        out_path = out_dir / f"{name}_all_COMPRESS.pt"
+    else:
+        out_path = out_dir / f"{name}_s{args.site}_COMPRESS.pt"
+
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     dtype  = torch.float32
@@ -128,10 +147,31 @@ def main():
     print(f">> Loading params: {param_path}")
     print(f">> Running COMPRESS...")
     print(f">> ----------------------------------------")
-    AA, CG = get_Grids(param_path, config, args.site, device, dtype)
-    CG = update_CG(AA, CG, config)
-    write_result(out_path, AA, CG)
+    AA, _ = get_Grids(param_path, config, 1, device, dtype)  
+    M = AA.pos.shape[0]  # Number of AA atoms
 
+    if args.site == "all":
+        out_path = work_dir / f"{name}_all_COMPRESS.pt"
+        print(f">> Running COMPRESS for K=1 to K={M}...")
+
+        results = []
+        for k in range(1, M + 1):
+            print(f">> ----------------------------------------")
+            print(f">> K = {k} / {M}")
+            print(f">> ----------------------------------------")
+            _, CG = get_Grids(param_path, config, k, device, dtype)
+            CG = update_CG(AA, CG, config)
+            results.append((k, CG))
+
+        write_result_all(out_path, AA, results)
+
+    else:
+        n_sites  = int(args.site)
+        out_path = work_dir / f"{name}_s{n_sites}_COMPRESS.pt"
+        print(f">> Running COMPRESS for K={n_sites}...")
+        _, CG = get_Grids(param_path, config, n_sites, device, dtype)
+        CG = update_CG(AA, CG, config)
+        write_result(out_path, AA, CG)
 
 if __name__ == "__main__":
     main()
