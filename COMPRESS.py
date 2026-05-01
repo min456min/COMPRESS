@@ -38,12 +38,11 @@ def main():
     parser.add_argument("--tau_charge",       type=float, nargs=2, default=[0.2, 1.0])
     parser.add_argument("--tau_epsilon",      type=float, nargs=2, default=[0.2, 2.0])
 
-    # Path arguments (optional, default to cwd)
+    # Directory arguments (optional, default to cwd)
+    parser.add_argument("--input_dir",  type=Path, default=None, help="Directory containing input files (default: cwd)")
+    parser.add_argument("--acpype_dir", type=Path, default=None, help="Directory containing {name}.acpype (default: cwd)")
+    parser.add_argument("--param_dir",  type=Path, default=None, help="Directory to save/load {name}_params.csv (default: cwd)")
     parser.add_argument("--out_dir",    type=Path, default=None, help="Output directory (default: cwd)")
-    parser.add_argument("--param_path", type=Path, default=None, help="Path to existing params CSV")
-    parser.add_argument("--pdb_path",   type=Path, default=None, help="Path to existing PDB file")
-    parser.add_argument("--smi_path",   type=Path, default=None, help="Path to existing SMI file")
-
     args = parser.parse_args()
 
     # Reconstruct config dict
@@ -65,19 +64,19 @@ def main():
             "epsilon": args.tau_epsilon,
         }
     }
-    
     work_dir   = Path.cwd()
     name       = args.name
-    out_dir    = args.out_dir   if args.out_dir   else work_dir
-    param_path = args.param_path if args.param_path else work_dir / f"{name}_params.csv"
-    pdb_path   = args.pdb_path  if args.pdb_path  else work_dir / f"{name}.pdb"
-    acpype_dir = work_dir / f"{name}.acpype"
 
-    # Input path: smi_path > explicit path > default
-    if args.smi_path:
-        input_path = args.smi_path
-    else:
-        input_path = work_dir / f"{name}.{args.type}"
+    input_dir  = args.input_dir  if args.input_dir  else work_dir
+    acpype_dir = args.acpype_dir if args.acpype_dir else work_dir
+    param_dir  = args.param_dir  if args.param_dir  else work_dir
+    out_dir    = args.out_dir    if args.out_dir    else work_dir
+
+    # Fixed filename format
+    input_path = input_dir  / f"{name}.{args.type}"   # name.smi or name.pdb
+    pdb_path   = input_dir  / f"{name}.pdb"
+    acpype_dir = acpype_dir / f"{name}.acpype"
+    param_path = param_dir  / f"{name}_params.csv"    
 
     # Output path
     if args.site == "all":
@@ -88,6 +87,7 @@ def main():
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     dtype  = torch.float32
+
 
     print(f">> ----------------------------------------")
     print(f">> Name      : {name}")
@@ -134,7 +134,7 @@ def main():
         # Run ACPYPE
         if not acpype_dir.exists():
             print(f">> Running ACPYPE on: {pdb_path}")
-            run_acpype(pdb_path)
+            run_acpype(pdb_path, acpype_dir)
         else:
             print(f">> [SKIP] ACPYPE already exists: {acpype_dir}")
 

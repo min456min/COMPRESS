@@ -28,23 +28,35 @@ def generate_pdb_from_smiles(smi_path, pdb_path):
     Chem.MolToPDBFile(mol, str(pdb_path))
 
 
-def run_acpype(pdb_path, charge_method='bcc', net_charge=0):
-    """Execute acpype in cwd. Results will be in {name}.acpype/"""
+def run_acpype(pdb_path, acpype_dir, charge_method='bcc', net_charge=0):
+    """Execute acpype and move results to acpype_dir."""
     print(">> Running Acpype...")
+
+    name          = pdb_path.stem
+    acpype_output = Path.cwd() / f"{name}.acpype"  # acpype always dumps to cwd
 
     cmd = ["acpype", "-i", str(pdb_path), "-c", charge_method, "-n", str(net_charge)]
 
     try:
         subprocess.run(cmd, check=True, text=True)
-        print(">> Acpype finished successfully!")
-
     except subprocess.CalledProcessError as e:
         print(f"Error: Acpype failed.\n{e}")
+        if acpype_output.exists(): shutil.rmtree(acpype_output)
         sys.exit(1)
-
     except FileNotFoundError:
         print("Error: 'acpype' not found. Please ensure it is installed.")
         sys.exit(1)
+
+    # Move acpype output to specified directory
+    if acpype_output.exists():
+        if acpype_dir.exists():
+            shutil.rmtree(acpype_dir)
+        shutil.move(str(acpype_output), str(acpype_dir))
+        print(f">> Acpype finished successfully! Results saved to: {acpype_dir}")
+    else:
+        print(f"Error: Expected acpype output not found: {acpype_output}")
+        sys.exit(1)
+
 
 def extract_params(acpype_dir, param_path):
     """Extract sigma, epsilon, charge, position from acpype output and save as CSV."""
