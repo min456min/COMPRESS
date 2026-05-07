@@ -134,6 +134,8 @@ If you already have a PDB file, run from the directory containing `test.pdb`:
 compress -t pdb -n test -s 12
 ```
 
+You can also use "-s all" option to generate COMPRESS rerpesentations from K=1 to K=M
+
 In all three cases, the pipeline runs automatically:
 1. Generate `test.pdb` from SMILES via RDKit (Cases 1 & 2 only)
 2. Run ACPYPE → `test.acpype/`

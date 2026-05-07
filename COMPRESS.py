@@ -21,7 +21,7 @@ def main():
     parser.add_argument("-sm", "--smiles", type=str, default=None, help="SMILES string (e.g. 'c1ccccc1')")
 
     # Hyperparameters
-    parser.add_argument("--steps",            type=int,   default=100)
+    parser.add_argument("--steps",            type=int,   default=50)
     parser.add_argument("--grid_interval",    type=float, default=0.3)
     parser.add_argument("--grid_buffer",      type=float, default=5.0)
 
@@ -75,7 +75,7 @@ def main():
     # Fixed filename format
     input_path = input_dir  / f"{name}.{args.type}"   # name.smi or name.pdb
     pdb_path   = input_dir  / f"{name}.pdb"
-    acpype_dir = acpype_dir / f"{name}.acpype"
+    acpype_path = acpype_dir / f"{name}.acpype"
     param_path = param_dir  / f"{name}_params.csv"    
 
     # Output path
@@ -100,7 +100,13 @@ def main():
     # Skip SMI/PDB/ACPYPE if params already exist
     if param_path.exists():
         print(f">> [SKIP] Params already exists: {param_path}")
-        print(f">> [SKIP] SMI/PDB and ACPYPE steps skipped")
+        print(f">> [SKIP] All preprocessing steps skipped")
+    elif acpype_path.exists():
+        print(f">> [SKIP] ACPYPE already exists: {acpype_path}")
+        print(f">> [SKIP] Input/PDB steps skipped")
+        # Extract and save params
+        print(f">> Extracting params from: {acpype_path}")
+        extract_params(acpype_path, param_path)
 
     else:
         # Check input file exists
@@ -112,16 +118,11 @@ def main():
 
         # Convert SMI to PDB if needed
         if args.type == "smi":
-            # If SMILES string provided directly, write to .smi file first
             if args.smiles is not None:
                 print(f">> Writing SMILES to: {input_path}")
                 with open(input_path, 'w') as f:
                     f.write(f"{args.smiles}\n")
-    
-            if not input_path.exists():
-                print(f">> Error: Input file not found: {input_path}")
-                sys.exit(1)
-    
+
             if not pdb_path.exists():
                 print(f">> Generating PDB from SMILES: {input_path}")
                 generate_pdb_from_smiles(input_path, pdb_path)
@@ -132,11 +133,8 @@ def main():
             print(f">> Using PDB: {pdb_path}")
 
         # Run ACPYPE
-        if not acpype_dir.exists():
-            print(f">> Running ACPYPE on: {pdb_path}")
-            run_acpype(pdb_path, acpype_dir)
-        else:
-            print(f">> [SKIP] ACPYPE already exists: {acpype_dir}")
+        print(f">> Running ACPYPE on: {pdb_path}")
+        run_acpype(pdb_path, acpype_dir)
 
         # Extract and save params
         print(f">> Extracting params from: {acpype_dir}")
@@ -151,7 +149,6 @@ def main():
     M = AA.pos.shape[0]  # Number of AA atoms
 
     if args.site == "all":
-        out_path = work_dir / f"{name}_all_COMPRESS.pt"
         print(f">> Running COMPRESS for K=1 to K={M}...")
 
         results = []
@@ -167,7 +164,6 @@ def main():
 
     else:
         n_sites  = int(args.site)
-        out_path = work_dir / f"{name}_s{n_sites}_COMPRESS.pt"
         print(f">> Running COMPRESS for K={n_sites}...")
         _, CG = get_Grids(param_path, config, n_sites, device, dtype)
         CG = update_CG(AA, CG, config)

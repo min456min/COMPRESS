@@ -2,6 +2,8 @@ import os
 import torch
 
 def write_result(out_path, AA, CG):
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
     save_dict = {
         "AA": {
             "pos": AA.pos.detach().cpu(),
@@ -25,6 +27,7 @@ def write_result_all(out_path, AA, results):
     """Save AA and all K results to a single .pt file.
     results: list of (k, CG) tuples
     """
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     save_dict = {
         "AA": {
             "pos": AA.pos.detach().cpu(),
