@@ -219,3 +219,11 @@ example/test_params.csv
    ▼ COMPRESS (init → optimize)
 example/test_s12_COMPRESS.pt
 ```
+
+---
+
+## Data
+
+The COMPRESS_Drugs-GEOM_K25 dataset is available on Zenodo at:
+
+https://doi.org/10.5281/zenodo.20072228
